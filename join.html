@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Join Chromarena</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      text-align: center;
+      padding: 40px;
+    }
+    input, button {
+      font-size: 18px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDONxZL5nTVI5o47RqaQ2MXw5nWxll7wRA",
+      authDomain: "chromarena.firebaseapp.com",
+      projectId: "chromarena",
+      storageBucket: "chromarena.appspot.com",
+      messagingSenderId: "489331997387",
+      appId: "1:489331997387:web:e39540fe1b377798dc794e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function joinGame() {
+      const nameInput = document.getElementById("nameInput");
+      const name = nameInput.value.trim();
+      if (!name) return alert("Enter your name!");
+
+      const playerDoc = await addDoc(collection(db, "players"), {
+        name,
+        coins: 10,
+        color: null
+      });
+
+      // Redirect to game with ID
+      window.location.href = `player.html?id=${playerDoc.id}`;
+    }
+
+    window.onload = () => {
+      document.getElementById("joinBtn").onclick = joinGame;
+    };
+  </script>
+</head>
+<body>
+  <h1>Join Chromarena</h1>
+  <input type="text" id="nameInput" placeholder="Enter your name">
+  <br>
+  <button id="joinBtn">Join Game</button>
+</body>
+</html>
