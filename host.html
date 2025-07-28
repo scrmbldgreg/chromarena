@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Chromarena Host</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Chromarena Host - Create Lobby</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDONxZL5nTVI5o47RqaQ2MXw5nWxll7wRA",
@@ -19,93 +19,30 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const colors = ["yellow", "red", "blue", "green", "pink", "white"];
-
-    function updatePlayerList() {
-      colors.forEach(async (color) => {
-        const colorZone = document.getElementById(`${color}-zone`);
-        colorZone.innerHTML = "";
-        const querySnapshot = await getDocs(collection(db, "players"));
-        querySnapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          if (data.color === color) {
-            const p = document.createElement("p");
-            p.textContent = `${data.name} (${data.coins})`;
-            colorZone.appendChild(p);
-          }
-        });
-      });
-    }
-    async function rollDice() {
-    const result = [];
-    for (let i = 0; i < 3; i++) {
-        result.push(colors[Math.floor(Math.random() * colors.length)]);
+    function generateLobbyCode() {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let code = "";
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
     }
 
-    const diceSlots = document.querySelectorAll(".dice-slot");
-    diceSlots.forEach((slot, i) => {
-        colors.forEach(c => slot.classList.remove(c)); // Remove color first
-        slot.textContent = result[i];
-        slot.classList.add(result[i]); // Then add new color
-    });
-
-    const counts = {};
-    colors.forEach(color => counts[color] = 0);
-    result.forEach(color => counts[color]++);
-
-    const querySnapshot = await getDocs(collection(db, "players"));
-    querySnapshot.forEach(async (docSnap) => {
-        const player = docSnap.data();
-        let change = 0;
-        const hits = counts[player.color];
-        if (hits === 0) change = -1;
-        else change = hits;
-
-        const newCoins = (player.coins || 0) + change;
-        if (newCoins <= 0) {
-        await setDoc(doc(db, "players", docSnap.id), {}, { merge: false });
-        } else {
-        await updateDoc(doc(db, "players", docSnap.id), { coins: newCoins });
-        }
-    });
-
-    updatePlayerList();
+    async function createLobby() {
+      const code = generateLobbyCode();
+      const lobbyRef = doc(db, "lobbies", code);
+      await setDoc(lobbyRef, { createdAt: new Date().toISOString() });
+      // Redirect host to lobby page with code as URL param
+      window.location.href = `lobby.html?code=${code}`;
     }
 
-
-window.onload = async () => {
-  try {
-    const playersCol = collection(db, "players");
-    const snapshot = await getDocs(playersCol);
-    console.log("Players in Firestore:", snapshot.docs.map(doc => doc.data()));
-  } catch (error) {
-    console.error("Error reading players:", error);
-  }
-};
+    window.onload = () => {
+      document.getElementById("createBtn").addEventListener("click", createLobby);
+    };
   </script>
 </head>
 <body>
-  <h1 class="title">Chromarena Host</h1>
-
-  <div class="zones-container">
-    <div class="zone yellow"><h3>Yellow Zone</h3><div id="yellow-zone"></div></div>
-    <div class="zone red"><h3>Red Zone</h3><div id="red-zone"></div></div>
-    <div class="zone blue"><h3>Blue Zone</h3><div id="blue-zone"></div></div>
-    <div class="zone green"><h3>Green Zone</h3><div id="green-zone"></div></div>
-    <div class="zone pink"><h3>Pink Zone</h3><div id="pink-zone"></div></div>
-    <div class="zone white"><h3>White Zone</h3><div id="white-zone"></div></div>
-  </div>
-  
-  <div class="dice-section">
-    <h3>Rolled Dice</h3>
-    <div id="rolledDice" class="dice-container">
-      <div class="dice-slot">?</div>
-      <div class="dice-slot">?</div>
-      <div class="dice-slot">?</div>
-    </div>
-    <div class="roll-btn-wrapper">
-      <button id="rollBtn" class="btn">🎲 Roll Dice</button>
-    </div>
-  </div>
+  <h1>Chromarena Host</h1>
+  <button id="createBtn">Create Lobby</button>
 </body>
 </html>
